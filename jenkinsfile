@@ -1,0 +1,31 @@
+node{
+
+def mavenHome = tool name: 'maven3.9.2'
+
+properties([buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '5', daysToKeepStr: '', numToKeepStr: '5')), [$class: 'JobLocalConfiguration', changeReasonComment: ''], pipelineTriggers([pollSCM('* * * * *')])])
+
+stage('checkOutCode'){
+git credentialsId: '28d6eb7c-0c1d-4aa1-aa08-cbd8341f1dc7', url: 'https://github.com/gopi-ecommerce/maven-web-application.git'
+}
+
+stage('Build'){
+sh "${mavenHome}/bin/mvn clean package"
+}
+
+/*
+stage('ExecuteSonarQubeReport'){
+sh "${mavenHome}/bin/mvn clean sonar:sonar"
+}
+
+stage('UploadArtifactsIntoNexus'){
+sh "${mavenHome}/bin/mvn clean deploy"
+}
+*/
+stage('UploadArtifactsIntoTomcatServer'){
+sshagent(['1d8a8475-a650-463c-be6b-ca2aa6e431d2']){
+sh "scp -o StrictHostKeyChecking=no target/maven-web-application.war ec2-user@172.31.1.184:/opt/apache-tomcat-9.0.75/webapps/"
+
+}
+  
+}
+}
